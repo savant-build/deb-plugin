@@ -14,12 +14,16 @@
  * language governing permissions and limitations under the License.
  */
 package org.savantbuild.plugin.deb
+import org.apache.commons.compress.archivers.ar.ArArchiveEntry
+import org.apache.commons.compress.archivers.ar.ArArchiveInputStream
 import org.savantbuild.dep.domain.License
 import org.savantbuild.dep.domain.Version
 import org.savantbuild.domain.Project
+import org.savantbuild.io.FileTools
 import org.savantbuild.output.Output
 import org.savantbuild.output.SystemOutOutput
 import org.savantbuild.runtime.RuntimeConfiguration
+import org.savantbuild.util.tar.TarTools
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
@@ -27,12 +31,8 @@ import org.testng.annotations.Test
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.jar.*
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
-import java.util.zip.ZipInputStream
 
-import static org.testng.Assert.*
+import static org.testng.Assert.assertEquals
 /**
  * Tests the FilePlugin class.
  *
@@ -71,12 +71,16 @@ class DebPluginTest {
 
   @Test
   void build() {
+    FileTools.prune(projectDir.resolve("build/test"))
+
     plugin.build(to: "build/test", package: "test", architecture: "x86", conflicts: "nothing", depends: "test2", enhances: "test3",
-        preDepends: "test4", priority: "required", provides: "test5", recommends: "test6", replaces: "test7", section: "web", suggests: "test8",
-        preInst: "src/test/scripts/preinst", preRm: "src/test/scripts/prerm",
+        homepage: "http://www.inversoft.com", preDepends: "test4", priority: "required", provides: "test5", recommends: "test6",
+        replaces: "test7", section: "web", suggests: "test8", preInst: "src/test/scripts/preinst", preRm: "src/test/scripts/prerm",
         postInst: "src/test/scripts/postinst", postRm: "src/test/scripts/postrm") {
       version(upstream: "3.0.0-M4", debian: "1")
-      description(synopsis: "Description synopsis", extended: "Description extended")
+      description(synopsis: "Description synopsis", extended: """Description extended
+line2
+line3""")
       maintainer(name: "Inversoft", email: "sales@inversoft.com")
       tarFileSet(dir: "src/main/groovy", prefix: "main-groovy-files")
       tarFileSet(dir: "src/test/groovy", prefix: "test-groovy-files")
@@ -85,82 +89,46 @@ class DebPluginTest {
     }
 
     // Unpack everything
+    ArArchiveInputStream aais = new ArArchiveInputStream(Files.newInputStream(projectDir.resolve("build/test/test_3.0.0-M4-1_x86.deb")))
+    ArArchiveEntry entry = aais.getNextArEntry()
+    Path controlTar = projectDir.resolve("build/test/control.tar.gz")
+    assertEquals(entry.getName(), "control.tar.gz")
+    Files.copy(aais, controlTar)
 
-  }
+    Path controlExplodeDir = projectDir.resolve("build/test/control")
+    TarTools.untar(controlTar, controlExplodeDir, false, false)
+    assertEquals(new String(Files.readAllBytes(controlExplodeDir.resolve("conffiles"))), new String(Files.readAllBytes(projectDir.resolve("src/test/expected/conffiles"))))
+    assertEquals(new String(Files.readAllBytes(controlExplodeDir.resolve("md5sums"))), new String(Files.readAllBytes(projectDir.resolve("src/test/expected/md5sums"))))
+    assertEquals(new String(Files.readAllBytes(controlExplodeDir.resolve("control"))), new String(Files.readAllBytes(projectDir.resolve("src/test/expected/control"))))
+    assertEquals(new String(Files.readAllBytes(controlExplodeDir.resolve("postinst"))), new String(Files.readAllBytes(projectDir.resolve("src/test/scripts/postinst"))))
+    assertEquals(new String(Files.readAllBytes(controlExplodeDir.resolve("postrm"))), new String(Files.readAllBytes(projectDir.resolve("src/test/scripts/postrm"))))
+    assertEquals(new String(Files.readAllBytes(controlExplodeDir.resolve("preinst"))), new String(Files.readAllBytes(projectDir.resolve("src/test/scripts/preinst"))))
+    assertEquals(new String(Files.readAllBytes(controlExplodeDir.resolve("prerm"))), new String(Files.readAllBytes(projectDir.resolve("src/test/scripts/prerm"))))
 
-  private static void assertJarContains(Path jarFile, String... entries) {
-    JarFile jf = new JarFile(jarFile.toFile())
-    entries.each({ entry -> assertNotNull(jf.getEntry(entry), "Jar [${jarFile}] is missing entry [${entry}]") })
-    jf.close()
-  }
+    Path dataTar = projectDir.resolve("build/test/data.tar.gz")
+    entry = aais.getNextArEntry()
+    assertEquals(entry.getName(), "data.tar.gz")
+    Files.copy(aais, dataTar)
 
-  private static void assertJarFileEquals(Path jarFile, String entry, Path original) throws IOException {
-    JarInputStream jis = new JarInputStream(Files.newInputStream(jarFile))
-    JarEntry jarEntry = jis.getNextJarEntry()
-    while (jarEntry != null && !jarEntry.getName().equals(entry)) {
-      jarEntry = jis.getNextJarEntry()
-    }
-
-    if (jarEntry == null) {
-      fail("Jar [" + jarFile + "] is missing entry [" + entry + "]")
-    }
-
-    ByteArrayOutputStream baos = new ByteArrayOutputStream()
-    byte[] buf = new byte[1024]
-    int length
-    while ((length = jis.read(buf)) != -1) {
-      baos.write(buf, 0, length)
-    }
-
-    assertEquals(Files.readAllBytes(original), baos.toByteArray())
-    assertEquals(jarEntry.getSize(), Files.size(original))
-    assertEquals(jarEntry.getCreationTime(), Files.getAttribute(original, "creationTime"))
-    jis.close()
-  }
-
-  private static void assertJarManifest(Path jarFile, Manifest expected) throws IOException {
-    JarFile jf = new JarFile(jarFile.toFile())
-    Manifest actual = jf.getManifest()
-    println "jarFile ${jarFile} mf ${actual.getMainAttributes()}"
-    expected.getMainAttributes().put(Attributes.Name.IMPLEMENTATION_VERSION, "1.0.0")
-    expected.getMainAttributes().put(Attributes.Name.IMPLEMENTATION_VENDOR, "org.savantbuild.test.file-plugin-test")
-
-    assertEquals(actual.getMainAttributes(), expected.getMainAttributes(), "Actual " + actual.getMainAttributes() + " expected " + expected.getMainAttributes());
-    jf.close()
-  }
-
-  private static void assertZipContains(Path zipFile, String... entries) {
-    ZipFile jf = new ZipFile(zipFile.toFile())
-    entries.each({ entry -> assertNotNull(jf.getEntry(entry), "Zip [${zipFile}] is missing entry [${entry}]") })
-    jf.close()
-  }
-
-  private static void assertZipNotContains(Path zipFile, String... entries) {
-    ZipFile jf = new ZipFile(zipFile.toFile())
-    entries.each({ entry -> assertNull(jf.getEntry(entry), "Zip [${zipFile}] is contains entry [${entry}] and shouldn't") })
-    jf.close()
-  }
-
-  private static void assertZipFileEquals(Path zipFile, String entry, Path original) throws IOException {
-    ZipInputStream jis = new ZipInputStream(Files.newInputStream(zipFile))
-    ZipEntry zipEntry = jis.getNextEntry()
-    while (zipEntry != null && !zipEntry.getName().equals(entry)) {
-      zipEntry = jis.getNextEntry()
-    }
-
-    if (zipEntry == null) {
-      fail("Zip [" + zipFile + "] is missing entry [" + entry + "]")
-    }
-
-    ByteArrayOutputStream baos = new ByteArrayOutputStream()
-    byte[] buf = new byte[1024]
-    int length
-    while ((length = jis.read(buf)) != -1) {
-      baos.write(buf, 0, length)
-    }
-
-    assertEquals(Files.readAllBytes(original), baos.toByteArray())
-    assertEquals(zipEntry.getSize(), Files.size(original))
-    jis.close()
+    Path dataExplodeDir = projectDir.resolve("build/test/data")
+    TarTools.untar(dataTar, dataExplodeDir, false, false)
+    assertEquals(new String(Files.readAllBytes(dataExplodeDir.resolve("main-groovy-files/org/savantbuild/plugin/deb/ChangeLog.groovy"))),
+        new String(Files.readAllBytes(projectDir.resolve("src/main/groovy/org/savantbuild/plugin/deb/ChangeLog.groovy"))))
+    assertEquals(new String(Files.readAllBytes(dataExplodeDir.resolve("main-groovy-files/org/savantbuild/plugin/deb/DebDelegate.groovy"))),
+        new String(Files.readAllBytes(projectDir.resolve("src/main/groovy/org/savantbuild/plugin/deb/DebDelegate.groovy"))))
+    assertEquals(new String(Files.readAllBytes(dataExplodeDir.resolve("main-groovy-files/org/savantbuild/plugin/deb/DebPlugin.groovy"))),
+        new String(Files.readAllBytes(projectDir.resolve("src/main/groovy/org/savantbuild/plugin/deb/DebPlugin.groovy"))))
+    assertEquals(new String(Files.readAllBytes(dataExplodeDir.resolve("main-groovy-files/org/savantbuild/plugin/deb/Description.groovy"))),
+        new String(Files.readAllBytes(projectDir.resolve("src/main/groovy/org/savantbuild/plugin/deb/Description.groovy"))))
+    assertEquals(new String(Files.readAllBytes(dataExplodeDir.resolve("main-groovy-files/org/savantbuild/plugin/deb/Maintainer.groovy"))),
+        new String(Files.readAllBytes(projectDir.resolve("src/main/groovy/org/savantbuild/plugin/deb/Maintainer.groovy"))))
+    assertEquals(new String(Files.readAllBytes(dataExplodeDir.resolve("main-groovy-files/org/savantbuild/plugin/deb/Priority.groovy"))),
+        new String(Files.readAllBytes(projectDir.resolve("src/main/groovy/org/savantbuild/plugin/deb/Priority.groovy"))))
+    assertEquals(new String(Files.readAllBytes(dataExplodeDir.resolve("main-groovy-files/org/savantbuild/plugin/deb/Section.groovy"))),
+        new String(Files.readAllBytes(projectDir.resolve("src/main/groovy/org/savantbuild/plugin/deb/Section.groovy"))))
+    assertEquals(new String(Files.readAllBytes(dataExplodeDir.resolve("main-groovy-files/org/savantbuild/plugin/deb/Version.groovy"))),
+        new String(Files.readAllBytes(projectDir.resolve("src/main/groovy/org/savantbuild/plugin/deb/Version.groovy"))))
+    assertEquals(new String(Files.readAllBytes(dataExplodeDir.resolve("test-groovy-files/org/savantbuild/plugin/deb/DebPluginTest.groovy"))),
+        new String(Files.readAllBytes(projectDir.resolve("src/test/groovy/org/savantbuild/plugin/deb/DebPluginTest.groovy"))))
   }
 }

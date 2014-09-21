@@ -102,8 +102,8 @@ class DebDelegate {
          "priority", "provides", "recommends", "replaces", "section", "suggests"],
         ["to", "package", "section"],
         ["architecture": String.class, "conflicts": String.class, "depends": String.class, "enhances": String.class, "homepage": String.class,
-         "package": String.class, "priority": String.class, "provides": String.class, "recommends": String.class, "replaces": String.class,
-         "section": String.class, "suggests": String.class])) {
+         "package"     : String.class, "priority": String.class, "provides": String.class, "recommends": String.class, "replaces": String.class,
+         "section"     : String.class, "suggests": String.class])) {
       throw new BuildFailureException(ERROR_MESSAGE);
     }
 
@@ -417,7 +417,7 @@ class DebDelegate {
 
   void createControlTar(Path controlTar, Path debianDir) {
     if (postInst) {
-      Files.copy(project.directory.resolve(postInst), debianDir.resolve("postint"))
+      Files.copy(project.directory.resolve(postInst), debianDir.resolve("postinst"))
     }
     if (postRm) {
       Files.copy(project.directory.resolve(postRm), debianDir.resolve("postrm"))
@@ -429,10 +429,10 @@ class DebDelegate {
       Files.copy(project.directory.resolve(preRm), debianDir.resolve("prerm"))
     }
 
-    TarBuilder tarBuilder = new TarBuilder(controlTar)
-    tarBuilder.fileSet(new ArchiveFileSet(debianDir, "", 0x644, null, null, [~/control/, ~/md5sums/, ~/conffiles/, ~/templates/, ~/triggers/], []))
-    tarBuilder.fileSet(new ArchiveFileSet(debianDir, "", 0x755, null, null, [~/preinst/, ~/prerm/, ~/postinst/, ~/postrm/, ~/config/], []))
-    tarBuilder.build()
+    new TarBuilder(controlTar)
+        .fileSet(new ArchiveFileSet(debianDir, "", 0x644, null, null, [~/control/, ~/md5sums/, ~/conffiles/, ~/templates/, ~/triggers/], []))
+        .fileSet(new ArchiveFileSet(debianDir, "", 0x755, null, null, [~/preinst/, ~/prerm/, ~/postinst/, ~/postrm/, ~/config/], []))
+        .build()
   }
 
   private ArchiveFileSet toArchiveFileSet(Map<String, Object> attributes) {
