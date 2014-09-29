@@ -1,10 +1,10 @@
 9b640fad43120df02e8e733e59b93521 main-groovy-files/org/savantbuild/plugin/deb/ChangeLog.groovy
-83920b0f1529e305e45468a64881b1d5 main-groovy-files/org/savantbuild/plugin/deb/DebDelegate.groovy
-bba738c61ba476713173d7d9d1a92110 main-groovy-files/org/savantbuild/plugin/deb/DebPlugin.groovy
+536f294fae16f9e41d40d687a86fa919 main-groovy-files/org/savantbuild/plugin/deb/DebDelegate.groovy
+1a865d19e394d1d64177f66886b2c648 main-groovy-files/org/savantbuild/plugin/deb/DebPlugin.groovy
 2490caf70078ab4ccbe9dd2ed57a88d3 main-groovy-files/org/savantbuild/plugin/deb/Description.groovy
 8ac645440ca04b6480fb9fc6e0c00aff main-groovy-files/org/savantbuild/plugin/deb/Maintainer.groovy
 7a5ea52f82b3d5b30c5f149d8050675a main-groovy-files/org/savantbuild/plugin/deb/Priority.groovy
 2ad3dfb1627175f4558543cdbf64faca main-groovy-files/org/savantbuild/plugin/deb/Section.groovy
 ad74c591c80060cbf0036f8a0892cbcd main-groovy-files/org/savantbuild/plugin/deb/Version.groovy
-fa6c1adedb11374e267d43d9ef67c37c test-groovy-files/org/savantbuild/plugin/deb/DebPluginTest.groovy
+c2abdcc61694e3e5b16c43cb8491269c test-groovy-files/org/savantbuild/plugin/deb/DebPluginTest.groovy
 8aef7e9366940b08c971a27c17cba026 etc/init.d/init-script

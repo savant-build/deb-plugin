@@ -14,6 +14,7 @@
  * language governing permissions and limitations under the License.
  */
 package org.savantbuild.plugin.deb
+
 import org.apache.commons.compress.archivers.ar.ArArchiveEntry
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream
 import org.savantbuild.dep.domain.License
@@ -33,6 +34,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 import static org.testng.Assert.assertEquals
+
 /**
  * Tests the FilePlugin class.
  *

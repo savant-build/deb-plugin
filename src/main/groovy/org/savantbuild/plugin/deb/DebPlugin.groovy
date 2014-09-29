@@ -50,7 +50,7 @@ class DebPlugin extends BaseGroovyPlugin {
    * @return The number of files copied.
    */
   void build(Map<String, Object> attributes, Closure closure) {
-    def delegate = new DebDelegate(attributes, project)
+    DebDelegate delegate = new DebDelegate(attributes, project)
     closure.delegate = delegate
     closure()
 

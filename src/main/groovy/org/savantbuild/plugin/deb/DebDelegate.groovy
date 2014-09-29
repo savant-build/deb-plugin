@@ -48,7 +48,7 @@ class DebDelegate {
 
   public final Path to
 
-  public String architecture = "all"
+  public String architecture
 
   public String conflicts
 
@@ -127,6 +127,11 @@ class DebDelegate {
     this.suggests = attributes["suggests"]
     this.recommends = attributes["recommends"]
 
+    // Set the default architecture
+    if (!this.architecture) {
+      this.architecture = "all"
+    }
+
     if (section && !Section.isValid(section)) {
       throw new BuildFailureException("Invalid section [${section}] for the debian package")
     }
@@ -154,7 +159,6 @@ class DebDelegate {
     }
 
     Path tempDir = Files.createTempDirectory("savant-deb-plugin")
-    println tempDir
     Path debianDir = tempDir.resolve("DEBIAN")
     Path md5File = debianDir.resolve("md5sums")
     if (files.size() > 0) {
@@ -252,7 +256,7 @@ class DebDelegate {
    * @param attributes The named attributes (name is required).
    */
   void directory(Map<String, Object> attributes) {
-    if (!GroovyTools.attributesValid(attributes, ["name", "mode", "userName", "groupName"], ["name"], ["mode": Integer.class, "userName": String.class, "groupName": String.class])) {
+    if (!GroovyTools.attributesValid(attributes, ["name", "mode", "userName", "groupName"], ["name"], ["name": String.class, "mode": Integer.class, "userName": String.class, "groupName": String.class])) {
       throw new BuildFailureException(ERROR_MESSAGE)
     }
 
