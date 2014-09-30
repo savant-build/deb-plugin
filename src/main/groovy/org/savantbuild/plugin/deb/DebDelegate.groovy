@@ -118,7 +118,6 @@ class DebDelegate {
     this.preDepends = FileTools.toPath(attributes["preDepends"])
     this.preInst = FileTools.toPath(attributes["preInst"])
     this.preRm = FileTools.toPath(attributes["preRm"])
-    this.recommends = FileTools.toPath(attributes["recommends"])
     this.homepage = attributes["homepage"]
     this.replaces = attributes["replaces"]
     this.provides = attributes["provides"]
