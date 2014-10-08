@@ -39,6 +39,8 @@ import java.util.regex.Pattern
  * @author Brian Pontarelli
  */
 class DebDelegate {
+  public static final String DEBIAN_BINARY_FILE = "2.0\n"
+
   public static final String ERROR_MESSAGE = "The deb plugin build method must be called like this:\n\n" +
       "  deb.build(file: \"package.deb\") {\n" +
       "    tarFileSet(dir: \"some other dir\", prefix: \"some-prefix\")\n" +
@@ -192,6 +194,10 @@ class DebDelegate {
 
     ArArchiveOutputStream aaos = new ArArchiveOutputStream(Files.newOutputStream(debFile))
     aaos.withStream { os ->
+      os.putArchiveEntry(new ArArchiveEntry("debian-binary", DEBIAN_BINARY_FILE.length()))
+      os.write(DEBIAN_BINARY_FILE.getBytes())
+      os.closeArchiveEntry()
+
       os.putArchiveEntry(new ArArchiveEntry("control.tar.gz", Files.size(controlTar)))
       Files.copy(controlTar, os)
       os.closeArchiveEntry()
@@ -409,7 +415,7 @@ class DebDelegate {
     Files.write(controlFile, build.toString().getBytes("UTF-8"))
   }
 
-  long createDataFile(Path dataFile) {
+  private long createDataFile(Path dataFile) {
     TarBuilder tarBuilder = new TarBuilder(dataFile)
     files.each { file -> tarBuilder.fileSet(file) }
     conf.each { conf -> tarBuilder.fileSet(conf) }
@@ -418,7 +424,7 @@ class DebDelegate {
     return tarBuilder.getExplodedSize()
   }
 
-  void createControlTar(Path controlTar, Path debianDir) {
+  private void createControlTar(Path controlTar, Path debianDir) {
     if (postInst) {
       Files.copy(project.directory.resolve(postInst), debianDir.resolve("postinst"))
     }
