@@ -93,6 +93,12 @@ line3""")
     // Unpack everything
     ArArchiveInputStream aais = new ArArchiveInputStream(Files.newInputStream(projectDir.resolve("build/test/test_3.0.0-M4-1_x86.deb")))
     ArArchiveEntry entry = aais.getNextArEntry()
+    Path debianBinary = projectDir.resolve("build/test/debian-binary")
+    assertEquals(entry.getName(), "debian-binary")
+    Files.copy(aais, debianBinary)
+    assertEquals(new String(Files.readAllBytes(debianBinary)), "2.0\n")
+
+    entry = aais.getNextArEntry()
     Path controlTar = projectDir.resolve("build/test/control.tar.gz")
     assertEquals(entry.getName(), "control.tar.gz")
     Files.copy(aais, controlTar)
