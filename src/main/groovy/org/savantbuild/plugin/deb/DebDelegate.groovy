@@ -15,6 +15,10 @@
  */
 package org.savantbuild.plugin.deb
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
+
 import org.apache.commons.compress.archivers.ar.ArArchiveEntry
 import org.apache.commons.compress.archivers.ar.ArArchiveOutputStream
 import org.savantbuild.domain.Project
@@ -22,16 +26,10 @@ import org.savantbuild.io.ArchiveFileSet
 import org.savantbuild.io.Directory
 import org.savantbuild.io.FileSet
 import org.savantbuild.io.FileTools
+import org.savantbuild.io.tar.TarBuilder
 import org.savantbuild.parser.groovy.GroovyTools
 import org.savantbuild.runtime.BuildFailureException
 import org.savantbuild.security.MD5
-import org.savantbuild.util.tar.TarBuilder
-
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.StandardOpenOption
-import java.util.function.Function
-import java.util.regex.Pattern
 
 /**
  * Delegate for the deb method's closure. This does all the work of building debian pckage files.
@@ -220,18 +218,18 @@ class DebDelegate {
    * @param attributes The named attributes (dir is required).
    */
   void confFileSet(Map<String, Object> attributes) {
-    if (!GroovyTools.attributesValid(attributes, ["dir", "prefix", "mode", "userName", "groupName", "includePatterns", "excludePatterns"], ["dir"], ["prefix": String.class, "mode": Integer.class, "includePatterns": List.class, "excludePatterns": List.class])) {
-      throw new BuildFailureException(ERROR_MESSAGE)
+    String error = ArchiveFileSet.afsAttributesValid(attributes)
+    if (error != null) {
+      throw new BuildFailureException(error)
     }
 
-    ArchiveFileSet fileSet = toArchiveFileSet(attributes)
+    String userName = attributes["userName"] != null ? attributes["userName"] : "root"
+    String groupName = attributes["groupName"] != null ? attributes["groupName"] : "root"
+    Path dir = project.directory.resolve(FileTools.toPath(attributes.get("dir")))
+    ArchiveFileSet fileSet = ArchiveFileSet.fromAttributes(dir, attributes)
+        .withDirGroupName(groupName)
+        .withDirUserName(userName)
     conf.add(fileSet)
-
-    String userName = fileSet.userName != null ? fileSet.userName : "root"
-    String groupName = fileSet.groupName != null ? fileSet.groupName : "root"
-    fileSet.toFileInfos().each { info ->
-      directories.add(new Directory(info.relative.getParent().toString(), null, userName, groupName))
-    }
   }
 
   /**
@@ -261,13 +259,18 @@ class DebDelegate {
    * @param attributes The named attributes (name is required).
    */
   void directory(Map<String, Object> attributes) {
-    if (!GroovyTools.attributesValid(attributes, ["name", "mode", "userName", "groupName"], ["name"], ["name": String.class, "mode": Integer.class, "userName": String.class, "groupName": String.class])) {
-      throw new BuildFailureException(ERROR_MESSAGE)
+    String error = Directory.attributesValid(attributes)
+    if (error != null) {
+      throw new BuildFailureException(error)
     }
 
-    String userName = attributes["userName"]
-    String groupName = attributes["groupName"]
-    Directory directory = new Directory(attributes["name"], attributes["mode"], userName != null ? userName : "root", groupName != null ? groupName : "root")
+    Directory directory = Directory.fromAttributes(attributes)
+    if (directory.userName == null) {
+      directory.userName = "root"
+    }
+    if (directory.groupName == null) {
+      directory.groupName = "root"
+    }
     directories.add(directory)
   }
 
@@ -298,18 +301,18 @@ class DebDelegate {
    * @param attributes The named attributes (dir is required).
    */
   void tarFileSet(Map<String, Object> attributes) {
-    if (!GroovyTools.attributesValid(attributes, ["dir", "prefix", "mode", "userName", "groupName", "includePatterns", "excludePatterns"], ["dir"], ["prefix": String.class, "mode": Integer.class, "includePatterns": List.class, "excludePatterns": List.class])) {
-      throw new BuildFailureException(ERROR_MESSAGE)
+    String error = ArchiveFileSet.afsAttributesValid(attributes)
+    if (error != null) {
+      throw new BuildFailureException(error)
     }
 
-    ArchiveFileSet fileSet = toArchiveFileSet(attributes)
+    String userName = attributes["userName"] != null ? attributes["userName"] : "root"
+    String groupName = attributes["groupName"] != null ? attributes["groupName"] : "root"
+    Path dir = project.directory.resolve(FileTools.toPath(attributes.get("dir")))
+    ArchiveFileSet fileSet = ArchiveFileSet.fromAttributes(dir, attributes)
+        .withDirGroupName(groupName)
+        .withDirUserName(userName)
     files.add(fileSet)
-
-    String userName = fileSet.userName != null ? fileSet.userName : "root"
-    String groupName = fileSet.groupName != null ? fileSet.groupName : "root"
-    fileSet.toFileInfos().each { info ->
-      directories.add(new Directory(info.relative.getParent().toString(), null, userName, groupName))
-    }
   }
 
   /**
@@ -439,23 +442,8 @@ class DebDelegate {
     }
 
     new TarBuilder(controlTar)
-        .fileSet(new ArchiveFileSet(debianDir, "", 0x644, null, null, [~/control/, ~/md5sums/, ~/conffiles/, ~/templates/, ~/triggers/], []))
-        .fileSet(new ArchiveFileSet(debianDir, "", 0x755, null, null, [~/preinst/, ~/prerm/, ~/postinst/, ~/postrm/, ~/config/], []))
+        .fileSet(new ArchiveFileSet(debianDir, "", 0x644, null, null, null, null, null, [~/control/, ~/md5sums/, ~/conffiles/, ~/templates/, ~/triggers/], []))
+        .fileSet(new ArchiveFileSet(debianDir, "", 0x755, null, null, null, null, null, [~/preinst/, ~/prerm/, ~/postinst/, ~/postrm/, ~/config/], []))
         .build()
-  }
-
-  private ArchiveFileSet toArchiveFileSet(Map<String, Object> attributes) {
-    Path dir = project.directory.resolve(FileTools.toPath(attributes["dir"]))
-    List includePatterns = attributes["includePatterns"]
-    if (includePatterns != null) {
-      GroovyTools.convertListItems(includePatterns, Pattern.class, { value -> Pattern.compile(value.toString()) } as Function<Object, Pattern>)
-    }
-
-    List excludePatterns = attributes["excludePatterns"]
-    if (excludePatterns != null) {
-      GroovyTools.convertListItems(excludePatterns, Pattern.class, { value -> Pattern.compile(value.toString()) } as Function<Object, Pattern>)
-    }
-
-    return new ArchiveFileSet(dir, attributes["prefix"], attributes["mode"], attributes["userName"], attributes["groupName"], includePatterns, excludePatterns)
   }
 }

@@ -15,23 +15,23 @@
  */
 package org.savantbuild.plugin.deb
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+
 import org.apache.commons.compress.archivers.ar.ArArchiveEntry
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream
 import org.savantbuild.dep.domain.License
 import org.savantbuild.dep.domain.Version
 import org.savantbuild.domain.Project
 import org.savantbuild.io.FileTools
+import org.savantbuild.io.tar.TarTools
 import org.savantbuild.output.Output
 import org.savantbuild.output.SystemOutOutput
 import org.savantbuild.runtime.RuntimeConfiguration
-import org.savantbuild.util.tar.TarTools
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
-
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
 
 import static org.testng.Assert.assertEquals
 

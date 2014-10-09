@@ -60,6 +60,7 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="savant-dependency-management" scope="PROVIDED" />
+    <orderEntry type="module" module-name="savant-io" />
   </component>
 </module>
 
