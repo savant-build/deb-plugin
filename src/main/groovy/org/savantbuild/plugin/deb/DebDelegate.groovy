@@ -218,7 +218,7 @@ class DebDelegate {
    * @param attributes The named attributes (dir is required).
    */
   void confFileSet(Map<String, Object> attributes) {
-    String error = ArchiveFileSet.afsAttributesValid(attributes)
+    String error = ArchiveFileSet.attributesValid(attributes)
     if (error != null) {
       throw new BuildFailureException(error)
     }
@@ -301,7 +301,7 @@ class DebDelegate {
    * @param attributes The named attributes (dir is required).
    */
   void tarFileSet(Map<String, Object> attributes) {
-    String error = ArchiveFileSet.afsAttributesValid(attributes)
+    String error = ArchiveFileSet.attributesValid(attributes)
     if (error != null) {
       throw new BuildFailureException(error)
     }
