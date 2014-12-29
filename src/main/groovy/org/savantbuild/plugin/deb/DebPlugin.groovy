@@ -49,7 +49,7 @@ class DebPlugin extends BaseGroovyPlugin {
    * @param closure The closure that is invoked.
    * @return The number of files copied.
    */
-  void build(Map<String, Object> attributes, Closure closure) {
+  void build(Map<String, Object> attributes, @DelegatesTo(DebDelegate.class) Closure closure) {
     DebDelegate delegate = new DebDelegate(attributes, project)
     closure.delegate = delegate
     closure()
