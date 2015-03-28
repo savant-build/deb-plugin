@@ -54,7 +54,7 @@ class DebPlugin extends BaseGroovyPlugin {
     closure.delegate = delegate
     closure()
 
-    output.info("Building Debian package [${delegate.pkg}_${delegate.version}_${delegate.architecture}.deb]")
+    output.infoln("Building Debian package [${delegate.pkg}_${delegate.version}_${delegate.architecture}.deb]")
     delegate.build()
   }
 }
