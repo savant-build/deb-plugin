@@ -404,7 +404,7 @@ class DebDelegate {
     }
 
     if (installedSize > 0) {
-      build.append("Installed-Size: ${(long) installedSize / 1024L}\n")
+      build.append("Installed-Size: ${(long) (installedSize / 1024L)}\n")
     }
 
     build.append("Maintainer: ${maintainer}\n")
