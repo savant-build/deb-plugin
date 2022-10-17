@@ -32,7 +32,7 @@ import org.savantbuild.runtime.BuildFailureException
 import org.savantbuild.security.MD5
 
 /**
- * Delegate for the deb method's closure. This does all the work of building debian pckage files.
+ * Delegate for the deb method's closure. This does all the work of building debian package files.
  *
  * @author Brian Pontarelli
  */
@@ -40,7 +40,7 @@ class DebDelegate {
   public static final String DEBIAN_BINARY_FILE = "2.0\n"
 
   public static final String ERROR_MESSAGE = "The deb plugin build method must be called like this:\n\n" +
-      "  deb.build(file: \"package.deb\") {\n" +
+      "  deb.build(to: \"package.deb\") {\n" +
       "    tarFileSet(dir: \"some other dir\", prefix: \"some-prefix\")\n" +
       "  }"
 

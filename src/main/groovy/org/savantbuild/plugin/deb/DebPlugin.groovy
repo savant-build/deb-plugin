@@ -52,6 +52,7 @@ class DebPlugin extends BaseGroovyPlugin {
   void build(Map<String, Object> attributes, @DelegatesTo(DebDelegate.class) Closure closure) {
     DebDelegate delegate = new DebDelegate(attributes, project)
     closure.delegate = delegate
+    closure.resolveStrategy = Closure.DELEGATE_FIRST
     closure()
 
     output.infoln("Building Debian package [${delegate.pkg}_${delegate.version}_${delegate.architecture}.deb]")
