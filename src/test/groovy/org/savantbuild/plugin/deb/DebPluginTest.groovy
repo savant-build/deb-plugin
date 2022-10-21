@@ -22,8 +22,8 @@ import java.nio.file.Paths
 import org.apache.commons.compress.archivers.ar.ArArchiveEntry
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream
 import org.savantbuild.dep.domain.License
-import org.savantbuild.dep.domain.Version
 import org.savantbuild.domain.Project
+import org.savantbuild.domain.Version
 import org.savantbuild.io.FileTools
 import org.savantbuild.io.tar.TarTools
 import org.savantbuild.output.Output
@@ -50,7 +50,7 @@ class DebPluginTest {
   DebPlugin plugin
 
   @BeforeSuite
-  public static void beforeSuite() {
+  static void beforeSuite() {
     projectDir = Paths.get("")
     if (!Files.isRegularFile(projectDir.resolve("LICENSE"))) {
       projectDir = Paths.get("../deb-plugin")
@@ -58,7 +58,7 @@ class DebPluginTest {
   }
 
   @BeforeMethod
-  public void beforeMethod() {
+  void beforeMethod() {
     output = new SystemOutOutput(true)
     output.enableDebug()
 
@@ -66,7 +66,7 @@ class DebPluginTest {
     project.group = "org.savantbuild.test"
     project.name = "dev-plugin-test"
     project.version = new Version("1.0")
-    project.licenses.put(License.ApacheV2_0, null)
+    project.licenses.add(License.parse("ApacheV2_0", null))
 
     plugin = new DebPlugin(project, new RuntimeConfiguration(), output)
   }
